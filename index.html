@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RsyncBud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: transparent; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .terminal-scroll::-webkit-scrollbar { width: 8px; }
+        .terminal-scroll::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
+        
+        /* Drag Region for Frameless Window */
+        .drag-region { -webkit-app-region: drag; }
+        .no-drag { -webkit-app-region: no-drag; }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        
+        .animated-list-item { animation: fadeInUp 0.3s ease-out forwards; opacity: 0; }
+    </style>
+</head>
+<body class="bg-slate-900/80 text-gray-100 h-screen flex flex-col overflow-hidden selection:bg-blue-500/30">
+    <div class="flex-1 overflow-y-auto p-6 pt-12 space-y-6">
+        <!-- Header / Drag Area -->
+        <header class="drag-region fixed top-0 left-0 right-0 h-10 z-50 flex items-center justify-center">
+            <span class="text-xs font-medium text-gray-500 tracking-widest uppercase">RsyncBud</span>
+        </header>
+
+        <!-- Main Title -->
+        <div class="flex items-center space-x-3 animate-fade-in pl-2">
+            <div class="p-2 bg-black/20 rounded-xl border border-white/10 shadow-inner flex items-center justify-center">
+                <img src="./assets/logo.png" alt="RsyncBud Logo" class="w-10 h-10 object-contain drop-shadow-lg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjM0I4MkY2IiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTggN3Y4YTIgMiAwIDAwMiAyaDZNOCA3VjVhMiAyIDAgMDEyLTJoNC41ODZhMSAxIDAgMDEuNzA3LjI5M2w0LjQxNCA0LjQxNGExIDEgMCAwMS4yOTMuNzA3VjE1YTIgMiAwIDAxLTIgMmgtMk04IDdINmEyIDIgMCAwMC0yIDJ2MTBhMiAyIDAgMDAyIDJoOGEyIDIgMCAwMDItMnYtMiIvPjwvc3ZnPg=='">
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">RsyncBud</h1>
+                <p class="text-xs text-gray-500">Sync safely, seamlessly</p>
+            </div>
+        </div>
+
+        <!-- Sources Section -->
+        <section class="glass rounded-2xl p-5 border border-white/5 shadow-2xl animate-fade-in delay-100 transition-all hover:bg-white/5">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Sources</h2>
+            <ul id="source-list" class="space-y-2 text-sm max-h-32 overflow-y-auto">
+                <li class="text-gray-500 italic">No files selected.</li>
+            </ul>
+        </section>
+
+        <!-- Target Configuration -->
+        <section class="glass rounded-2xl p-5 border border-white/5 shadow-2xl space-y-5 animate-fade-in delay-200 transition-all hover:bg-white/5">
+            <div>
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Target Directory</h2>
+                <div class="flex space-x-3 no-drag">
+                    <input type="text" id="target-input" placeholder="/path/to/destination" class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all text-white placeholder-gray-600 shadow-inner">
+                    <button id="browse-btn" class="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer border border-white/10 hover:border-white/20 shadow-lg active:scale-95">Browse...</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 no-drag">
+                <div class="group relative">
+                    <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2 pl-1">Favorites</h3>
+                    <select id="favorites-select" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/50 outline-none text-white appearance-none cursor-pointer hover:bg-white/10 transition-colors shadow-inner">
+                        <option value="">Choose a Favorite</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 top-6 text-gray-400 group-hover:text-white transition-colors">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+                <div class="group relative">
+                    <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2 pl-1">Recent</h3>
+                    <select id="recent-select" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/50 outline-none text-white appearance-none cursor-pointer hover:bg-white/10 transition-colors shadow-inner">
+                        <option value="">Choose Recent Target</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 top-6 text-gray-400 group-hover:text-white transition-colors">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end no-drag">
+                <button id="add-favorite-btn" class="text-[11px] text-blue-400 hover:text-blue-300 font-semibold tracking-wide flex items-center space-x-1 group transition-colors">
+                    <svg class="w-3 h-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                    <span>Save to Favorites</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Options & Execution -->
+        <section class="glass rounded-2xl p-5 border border-white/5 shadow-2xl animate-fade-in delay-300 no-drag transition-all">
+            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Rsync Options</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-2 mb-6">
+                <label class="flex items-center space-x-2.5 cursor-pointer group">
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" id="opt-compress" class="peer appearance-none w-5 h-5 border border-gray-500 rounded-md bg-black/40 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                        <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-[13px] font-medium text-gray-400 group-hover:text-white transition-colors">Compress (-z)</span>
+                </label>
+                <label class="flex items-center space-x-2.5 cursor-pointer group">
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" id="opt-move" class="peer appearance-none w-5 h-5 border border-gray-500 rounded-md bg-black/40 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                        <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-[13px] font-medium text-gray-400 group-hover:text-white transition-colors">Move (Delete Source)</span>
+                </label>
+                <label class="flex items-center space-x-2.5 cursor-pointer group" title="Delete files in destination that no longer exist in source">
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" id="opt-delete" class="peer appearance-none w-5 h-5 border border-gray-500 rounded-md bg-black/40 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                        <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-[13px] font-medium text-gray-400 group-hover:text-white transition-colors">Exact Mirror (--delete)</span>
+                </label>
+                <label class="flex items-center space-x-2.5 cursor-pointer group" title="Skip files that are newer on the receiver">
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" id="opt-update" class="peer appearance-none w-5 h-5 border border-gray-500 rounded-md bg-black/40 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                        <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-[13px] font-medium text-gray-400 group-hover:text-white transition-colors">Skip Newer (-u)</span>
+                </label>
+                <label class="flex items-center space-x-2.5 cursor-pointer group" title="Run without making any actual changes">
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" id="opt-dryrun" class="peer appearance-none w-5 h-5 border border-gray-500 rounded-md bg-black/40 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                        <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-[13px] font-medium text-gray-400 group-hover:text-white transition-colors">Dry Run (-n)</span>
+                </label>
+                <label class="flex items-center space-x-2.5 cursor-pointer group" title="Show progress during transfer">
+                    <div class="relative flex items-center justify-center">
+                        <input type="checkbox" id="opt-progress" class="peer appearance-none w-5 h-5 border border-gray-500 rounded-md bg-black/40 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer" checked>
+                        <svg class="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <span class="text-[13px] font-medium text-gray-400 group-hover:text-white transition-colors">Progress (-P)</span>
+                </label>
+            </div>
+            <div class="flex justify-end">
+                <button id="run-btn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-7 py-3 rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-blue-500/25 flex items-center space-x-2 active:scale-95 group border border-white/10 w-full md:w-auto justify-center">
+                    <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Start Sync</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Terminal Output -->
+        <section class="h-48 glass rounded-2xl border border-white/5 shadow-2xl flex flex-col overflow-hidden animate-fade-in delay-300 no-drag transition-shadow hover:shadow-blue-500/5">
+            <div class="bg-black/60 px-4 py-2.5 border-b border-white/5 flex justify-between items-center backdrop-blur-md">
+                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Output Console</span>
+            </div>
+            <div id="terminal-output" class="flex-1 p-5 overflow-y-auto text-xs font-mono text-emerald-400 whitespace-pre-wrap terminal-scroll leading-relaxed bg-black/40">System initialized. Awaiting parameters...<br></div>
+        </section>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
