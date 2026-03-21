@@ -11,8 +11,20 @@ const optDelete = document.getElementById('opt-delete');
 const optUpdate = document.getElementById('opt-update');
 const optDryrun = document.getElementById('opt-dryrun');
 const optProgress = document.getElementById('opt-progress');
+const optSyncSeparately = document.getElementById('opt-sync-separately');
+const optChecksum = document.getElementById('opt-checksum');
+const optIgnoreExisting = document.getElementById('opt-ignore-existing');
+const optHardLinks = document.getElementById('opt-hard-links');
+const optPruneEmpty = document.getElementById('opt-prune-empty');
+const optInplace = document.getElementById('opt-inplace');
+const optXattrs = document.getElementById('opt-xattrs');
+const optAcls = document.getElementById('opt-acls');
 const runBtn = document.getElementById('run-btn');
 const terminalOutput = document.getElementById('terminal-output');
+const progressText = document.getElementById('progress-text');
+const progressPercent = document.getElementById('progress-percent');
+const progressContainer = document.getElementById('progress-container');
+const progressBar = document.getElementById('progress-bar');
 
 // App State
 let sources = [];
@@ -42,8 +54,19 @@ async function init() {
         runBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         runBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>Start Rsync</span>
+            <span>Start Sync</span>
         `;
+        progressText.textContent = code === 0 ? 'Finished Successfully' : 'Finished with Errors';
+        progressPercent.textContent = '100%';
+        progressBar.style.width = '100%';
+        
+        setTimeout(() => {
+            progressPercent.style.opacity = '0';
+            progressContainer.style.opacity = '0';
+            setTimeout(() => {
+                progressText.textContent = 'Output Console';
+            }, 300);
+        }, 3000);
     });
 }
 
@@ -135,11 +158,51 @@ addFavoriteBtn.addEventListener('click', async () => {
     }
 });
 
+let currentLogLine = null;
+let returnCarriage = false;
+
 function appendLog(text, colorClass) {
-    const span = document.createElement('span');
-    span.className = colorClass;
-    span.textContent = text;
-    terminalOutput.appendChild(span);
+    // Parse progress percentage (takes the last match in the chunk)
+    const matches = [...text.matchAll(/(\d+)%/g)];
+    if (matches.length > 0) {
+        const pct = matches[matches.length - 1][1];
+        progressBar.style.width = pct + '%';
+        progressPercent.textContent = pct + '%';
+    }
+    
+    // Parse state text
+    if (text.includes('building file list')) {
+        progressText.textContent = 'Building file list...';
+    } else if (matches.length > 0 || text.includes('to-chk')) {
+        progressText.textContent = 'Syncing files...';
+    }
+
+    const parts = text.split(/([\r\n])/);
+    
+    for (const part of parts) {
+        if (!part) continue;
+        
+        if (!currentLogLine || currentLogLine.className !== colorClass) {
+            currentLogLine = document.createElement('span');
+            currentLogLine.className = colorClass;
+            terminalOutput.appendChild(currentLogLine);
+            returnCarriage = false;
+        }
+        
+        if (part === '\n') {
+            terminalOutput.appendChild(document.createElement('br'));
+            currentLogLine = null;
+            returnCarriage = false;
+        } else if (part === '\r') {
+            returnCarriage = true;
+        } else {
+            if (returnCarriage) {
+                currentLogLine.textContent = '';
+                returnCarriage = false;
+            }
+            currentLogLine.appendChild(document.createTextNode(part));
+        }
+    }
     terminalOutput.scrollTop = terminalOutput.scrollHeight;
 }
 
@@ -169,8 +232,17 @@ runBtn.addEventListener('click', async () => {
         <span>Running...</span>
     `;
 
+    // Reset Progress Bar state
+    progressText.textContent = 'Preparing...';
+    progressBar.style.width = '0%';
+    progressPercent.textContent = '0%';
+    progressPercent.style.opacity = '1';
+    progressContainer.style.opacity = '1';
+
     // Clear previous logs
     terminalOutput.innerHTML = '';
+    currentLogLine = null;
+    returnCarriage = false;
     
     window.api.runRsync({
         sources: sources,
@@ -180,7 +252,15 @@ runBtn.addEventListener('click', async () => {
         delete: optDelete.checked,
         update: optUpdate.checked,
         dryrun: optDryrun.checked,
-        progress: optProgress.checked
+        progress: optProgress.checked,
+        syncSeparately: optSyncSeparately.checked,
+        checksum: optChecksum.checked,
+        ignoreExisting: optIgnoreExisting.checked,
+        hardLinks: optHardLinks.checked,
+        pruneEmpty: optPruneEmpty.checked,
+        inplace: optInplace.checked,
+        xattrs: optXattrs.checked,
+        acls: optAcls.checked
     });
 });
 

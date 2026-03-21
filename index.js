@@ -112,7 +112,11 @@ ipcMain.handle('choose-directory', async () => {
 
 // Run Rsync
 ipcMain.on('run-rsync', (event, options) => {
-  const {sources, target, compress, move, delete: optDelete, update, dryrun, progress} = options;
+  const {
+    sources, target, compress, move, delete: optDelete, update, 
+    dryrun, progress, syncSeparately, checksum, ignoreExisting, 
+    hardLinks, pruneEmpty, inplace, xattrs, acls
+  } = options;
 
   if (!sources || sources.length === 0) {
     event.reply('rsync-stdout', 'No source files to sync.\n');
@@ -120,40 +124,83 @@ ipcMain.on('run-rsync', (event, options) => {
   }
 
   // -a: archive mode, -v: verbose
-  const rsyncArgs = ['-av'];
+  const baseArgs = ['-av'];
 
-  if (compress) rsyncArgs.push('-z');
-  if (move) rsyncArgs.push('--remove-source-files');
-  if (optDelete) rsyncArgs.push('--delete');
-  if (update) rsyncArgs.push('-u');
-  if (dryrun) rsyncArgs.push('-n'); // -n is --dry-run
-  if (progress) rsyncArgs.push('-P'); // -P is --partial --progress
+  if (compress) baseArgs.push('-z');
+  if (move) baseArgs.push('--remove-source-files');
+  if (optDelete) baseArgs.push('--delete');
+  if (update) baseArgs.push('-u');
+  if (dryrun) baseArgs.push('-n'); // -n is --dry-run
+  if (progress) baseArgs.push('-P'); // -P is --partial --progress
+  if (checksum) baseArgs.push('-c');
+  if (ignoreExisting) baseArgs.push('--ignore-existing');
+  if (hardLinks) baseArgs.push('-H');
+  if (pruneEmpty) baseArgs.push('-m');
+  if (inplace) baseArgs.push('--inplace');
+  if (xattrs) baseArgs.push('-X');
+  if (acls) baseArgs.push('-A');
 
-  // Add sources
-  rsyncArgs.push(...sources);
+  if (syncSeparately) {
+    let currentIndex = 0;
+    let finalCode = 0;
 
-  // Add target
-  // Remember rsync requires the target to be the last argument.
-  // Also, if copying multiple files into a target directory, the target directory should end with / or just be the path.
-  rsyncArgs.push(target);
+    const runNext = () => {
+      if (currentIndex >= sources.length) {
+        event.reply('rsync-exit', finalCode);
+        return;
+      }
 
-  event.reply('rsync-stdout', `Running: rsync ${rsyncArgs.join(' ')}\n\n`);
+      const currentSource = sources[currentIndex];
+      const rsyncArgs = [...baseArgs, currentSource, target];
+      
+      event.reply('rsync-stdout', `Running: rsync ${rsyncArgs.join(' ')}\n\n`);
+      const rsyncProcess = spawn('rsync', rsyncArgs);
 
-  const rsyncProcess = spawn('rsync', rsyncArgs);
+      rsyncProcess.stdout.on('data', (data) => {
+        event.reply('rsync-stdout', data.toString());
+      });
 
-  rsyncProcess.stdout.on('data', (data) => {
-    event.reply('rsync-stdout', data.toString());
-  });
+      rsyncProcess.stderr.on('data', (data) => {
+        event.reply('rsync-stderr', data.toString());
+      });
 
-  rsyncProcess.stderr.on('data', (data) => {
-    event.reply('rsync-stderr', data.toString());
-  });
+      rsyncProcess.on('close', (code) => {
+        if (code !== 0) finalCode = code;
+        currentIndex++;
+        runNext();
+      });
 
-  rsyncProcess.on('close', (code) => {
-    event.reply('rsync-exit', code);
-  });
+      rsyncProcess.on('error', (err) => {
+        event.reply('rsync-stderr', `Process error: ${err.message}\n`);
+        finalCode = 1;
+        currentIndex++;
+        runNext();
+      });
+    };
 
-  rsyncProcess.on('error', (err) => {
-    event.reply('rsync-stderr', `Process error: ${err.message}\n`);
-  });
+    runNext();
+  } else {
+    // Add sources
+    const rsyncArgs = [...baseArgs, ...sources, target];
+
+    event.reply('rsync-stdout', `Running: rsync ${rsyncArgs.join(' ')}\n\n`);
+
+    const rsyncProcess = spawn('rsync', rsyncArgs);
+
+    rsyncProcess.stdout.on('data', (data) => {
+      event.reply('rsync-stdout', data.toString());
+    });
+
+    rsyncProcess.stderr.on('data', (data) => {
+      event.reply('rsync-stderr', data.toString());
+    });
+
+    rsyncProcess.on('close', (code) => {
+      event.reply('rsync-exit', code);
+    });
+
+    rsyncProcess.on('error', (err) => {
+      event.reply('rsync-stderr', `Process error: ${err.message}\n`);
+    });
+  }
 });
