@@ -1,18 +1,18 @@
-const {app, BrowserWindow, ipcMain, dialog} = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const {spawn} = require('child_process');
+const { spawn } = require('child_process');
 
 let mainWindow;
 
-function createWindow () {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 650,
     icon: path.join(__dirname, 'assets', 'logo.png'),
     titleBarStyle: 'hidden',
-    trafficLightPosition: {x: 16, y: 16},
+    trafficLightPosition: { x: 16, y: 16 },
     vibrancy: 'under-window',
     visualEffectState: 'active',
     backgroundColor: '#00000000',
@@ -27,7 +27,7 @@ function createWindow () {
   mainWindow.loadFile('index.html');
 }
 
-function installQuickAction () {
+function installQuickAction() {
   if (process.platform !== 'darwin') return;
 
   const targetServicesDir = path.join(os.homedir(), 'Library', 'Services');
@@ -41,12 +41,12 @@ function installQuickAction () {
 
   try {
     if (!fs.existsSync(targetServicesDir)) {
-      fs.mkdirSync(targetServicesDir, {recursive: true});
+      fs.mkdirSync(targetServicesDir, { recursive: true });
     }
 
     // Auto-install it if the user doesn't have it yet
     if (!fs.existsSync(targetWorkflow) && fs.existsSync(sourceWorkflow)) {
-      fs.cpSync(sourceWorkflow, targetWorkflow, {recursive: true});
+      fs.cpSync(sourceWorkflow, targetWorkflow, { recursive: true });
       console.log('Successfully auto-installed RsyncBud Quick Action to macOS Services.');
     }
   } catch (err) {
@@ -58,12 +58,12 @@ app.whenReady().then(() => {
   installQuickAction();
   createWindow();
 
-  app.on('activate', function() {
+  app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on('window-all-closed', function() {
+app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -88,7 +88,7 @@ ipcMain.handle('get-history', () => {
   } catch (err) {
     console.error('Failed to read history:', err);
   }
-  return {history: [], favorites: []};
+  return { history: [], favorites: [] };
 });
 
 ipcMain.handle('save-history', (event, newHistory) => {
@@ -113,8 +113,8 @@ ipcMain.handle('choose-directory', async () => {
 // Run Rsync
 ipcMain.on('run-rsync', (event, options) => {
   const {
-    sources, target, compress, move, delete: optDelete, update, 
-    dryrun, progress, syncSeparately, checksum, ignoreExisting, 
+    sources, target, compress, move, delete: optDelete, update,
+    dryrun, progress, syncSeparately, checksum, ignoreExisting,
     hardLinks, pruneEmpty, inplace, xattrs, acls
   } = options;
 
@@ -123,8 +123,12 @@ ipcMain.on('run-rsync', (event, options) => {
     return;
   }
 
-  // -a: archive mode, -v: verbose
   const baseArgs = ['-av'];
+
+  // Auto-detect remote SSH targets
+  if (target.includes(':') && !target.startsWith('/')) {
+    baseArgs.push('-e', 'ssh -o StrictHostKeyChecking=accept-new');
+  }
 
   if (compress) baseArgs.push('-z');
   if (move) baseArgs.push('--remove-source-files');
@@ -152,7 +156,7 @@ ipcMain.on('run-rsync', (event, options) => {
 
       const currentSource = sources[currentIndex];
       const rsyncArgs = [...baseArgs, currentSource, target];
-      
+
       event.reply('rsync-stdout', `Running: rsync ${rsyncArgs.join(' ')}\n\n`);
       const rsyncProcess = spawn('rsync', rsyncArgs);
 
