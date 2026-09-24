@@ -8,5 +8,5 @@ contextBridge.exposeInMainWorld('api', {
   runRsync: (options) => ipcRenderer.send('run-rsync', options),
   onRsyncStdout: (callback) => ipcRenderer.on('rsync-stdout', (_event, data) => callback(data)),
   onRsyncStderr: (callback) => ipcRenderer.on('rsync-stderr', (_event, data) => callback(data)),
-  onRsyncExit: (callback) => ipcRenderer.on('rsync-exit', (_event, code) => callback(code)),
+  onRsyncExit: (callback) => ipcRenderer.on('rsync-exit', (_event, code) => callback(code))
 });

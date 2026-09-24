@@ -1,16 +1,26 @@
 {
   "name": "rsyncbud",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A context-aware graphical interface for rsync, integrated as a macOS Finder Quick Action.",
+  "main": "src/main/index.js",
   "scripts": {
-    "start": "electron ."
+    "prestart": "npm run build:css",
+    "start": "electron .",
+    "build:css": "tailwindcss -i ./src/renderer/styles.css -o ./src/renderer/dist/output.css --minify",
+    "watch:css": "tailwindcss -i ./src/renderer/styles.css -o ./src/renderer/dist/output.css --watch"
   },
-  "keywords": [],
+  "keywords": [
+    "rsync",
+    "electron",
+    "macos",
+    "finder"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^41.0.3"
+    "@tailwindcss/cli": "^4.3.3",
+    "electron": "^41.0.3",
+    "tailwindcss": "^4.3.3"
   }
 }

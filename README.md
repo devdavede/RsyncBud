@@ -89,6 +89,17 @@ If you want to test the UI standalone or with mock arguments:
 ```bash
 npm start -- "/dummy/file1.txt" "/dummy/file2.txt"
 ```
+`npm start` rebuilds the Tailwind CSS bundle automatically before launching. While iterating on styles, run `npm run watch:css` in a separate terminal to rebuild on save.
+
+### Project Structure
+
+```
+src/
+  main/        # Electron main process (window, IPC handlers, rsync execution)
+  preload/     # contextBridge API exposed to the renderer
+  renderer/    # UI (HTML, Tailwind source, browser-side JS modules)
+assets/        # App icon and the bundled Automator Quick Action
+```
 
 ## 📄 License
 This project is licensed under the MIT License.
