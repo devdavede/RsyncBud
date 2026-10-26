@@ -1,0 +1,31 @@
+window.RsyncBud = window.RsyncBud || {};
+
+RsyncBud.dom = {
+  appLogo: document.getElementById('app-logo'),
+  sourceList: document.getElementById('source-list'),
+  targetInput: document.getElementById('target-input'),
+  browseBtn: document.getElementById('browse-btn'),
+  favoritesSelect: document.getElementById('favorites-select'),
+  recentSelect: document.getElementById('recent-select'),
+  addFavoriteBtn: document.getElementById('add-favorite-btn'),
+  optCompress: document.getElementById('opt-compress'),
+  optMove: document.getElementById('opt-move'),
+  optDelete: document.getElementById('opt-delete'),
+  optUpdate: document.getElementById('opt-update'),
+  optDryrun: document.getElementById('opt-dryrun'),
+  optProgress: document.getElementById('opt-progress'),
+  optSyncSeparately: document.getElementById('opt-sync-separately'),
+  optChecksum: document.getElementById('opt-checksum'),
+  optIgnoreExisting: document.getElementById('opt-ignore-existing'),
+  optHardLinks: document.getElementById('opt-hard-links'),
+  optPruneEmpty: document.getElementById('opt-prune-empty'),
+  optInplace: document.getElementById('opt-inplace'),
+  optXattrs: document.getElementById('opt-xattrs'),
+  optAcls: document.getElementById('opt-acls'),
+  runBtn: document.getElementById('run-btn'),
+  terminalOutput: document.getElementById('terminal-output'),
+  progressText: document.getElementById('progress-text'),
+  progressPercent: document.getElementById('progress-percent'),
+  progressContainer: document.getElementById('progress-container'),
+  progressBar: document.getElementById('progress-bar')
+};

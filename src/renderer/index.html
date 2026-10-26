@@ -5,78 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RsyncBud</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: transparent;
-        }
-
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-        }
-
-        .terminal-scroll::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .terminal-scroll::-webkit-scrollbar-thumb {
-            background: #4B5563;
-            border-radius: 4px;
-        }
-
-        /* Drag Region for Frameless Window */
-        .drag-region {
-            -webkit-app-region: drag;
-        }
-
-        .no-drag {
-            -webkit-app-region: no-drag;
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-fade-in {
-            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
-        }
-
-        .delay-100 {
-            animation-delay: 100ms;
-        }
-
-        .delay-200 {
-            animation-delay: 200ms;
-        }
-
-        .delay-300 {
-            animation-delay: 300ms;
-        }
-
-        .animated-list-item {
-            animation: fadeInUp 0.3s ease-out forwards;
-            opacity: 0;
-        }
-    </style>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'">
+    <link rel="stylesheet" href="./dist/output.css">
 </head>
 
-<body style="margin-top:1em;"
-    class="bg-slate-900/80 text-gray-100 h-screen flex flex-col overflow-hidden selection:bg-blue-500/30">
+<body
+    class="bg-slate-900/80 text-gray-100 h-screen flex flex-col overflow-hidden selection:bg-blue-500/30 mt-4">
     <div class="flex-1 overflow-y-auto p-6 pt-12 space-y-6">
         <!-- Header / Drag Area -->
         <header class="drag-region fixed top-0 left-0 right-0 h-10 z-50 flex items-center justify-center">
@@ -87,8 +22,8 @@
         <div class="flex items-center space-x-3 animate-fade-in pl-2">
             <div
                 class="p-2 bg-black/20 rounded-xl border border-white/10 shadow-inner flex items-center justify-center">
-                <img src="./assets/logo.png" alt="RsyncBud Logo" class="w-10 h-10 object-contain drop-shadow-lg"
-                    onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjM0I4MkY2IiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTggN3Y4YTIgMiAwIDAwMiAyaDZNOCA3VjVhMiAyIDAgMDEyLTJoNC41ODZhMSAxIDAgMDEuNzA3LjI5M2w0LjQxNCA0LjQxNGExIDEgMCAwMS4yOTMuNzA3VjE1YTIgMiAwIDAxLTIgMmgtMk04IDdINmEyIDIgMCAwMC0yIDJ2MTBhMiAyIDAgMDAyIDJoOGEyIDIgMCAwMDItMnYtMiIvPjwvc3ZnPg=='">
+                <img id="app-logo" src="../../assets/logo.png" alt="RsyncBud Logo"
+                    class="w-10 h-10 object-contain drop-shadow-lg">
             </div>
             <div>
                 <h1
@@ -395,7 +330,12 @@
         </section>
     </div>
 
-    <script src="renderer.js"></script>
+    <script src="./js/dom.js"></script>
+    <script src="./js/state.js"></script>
+    <script src="./js/history.js"></script>
+    <script src="./js/terminal.js"></script>
+    <script src="./js/sync.js"></script>
+    <script src="./js/main.js"></script>
 </body>
 
 </html>
